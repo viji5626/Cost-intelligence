@@ -1,4 +1,4 @@
-# Hero Cost Intelligence
+# Plant Cost Intelligence
 
 A platform for cost intelligence, analysis, and optimization.
 
