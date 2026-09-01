@@ -1,0 +1,75 @@
+services:
+  # ============================================================================
+  # PostgreSQL 16 with pgvector Extension
+  # ============================================================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: hero_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hero_admin
+      POSTGRES_PASSWORD: hero_secure_password
+      POSTGRES_DB: hero_cost_intel
+    ports:
+      - "5432:5432"
+    volumes:
+      - hero_pgdata:/var/lib/postgresql/data
+      - ./postgres/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hero_admin -d hero_cost_intel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hero_airgap_net
+
+  # ============================================================================
+  # FastAPI Application Backend
+  # ============================================================================
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: hero_backend
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - AIR_GAP_MODE=true
+      - ENABLE_TELEMETRY=false
+      - ALLOW_EXTERNAL_EGRESS=false
+      - DATABASE_URL=postgresql+asyncpg://hero_admin:hero_secure_password@postgres:5432/hero_cost_intel
+      - DATABASE_URL_SYNC=postgresql+psycopg2://hero_admin:hero_secure_password@postgres:5432/hero_cost_intel
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - hero_airgap_net
+
+  # ============================================================================
+  # React / Vite Frontend SPA
+  # ============================================================================
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: hero_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - hero_airgap_net
+
+volumes:
+  hero_pgdata:
+    driver: local
+
+# Air-gap isolated internal bridge network
+networks:
+  hero_airgap_net:
+    driver: bridge
+    internal: false # set to true in production airgap environment

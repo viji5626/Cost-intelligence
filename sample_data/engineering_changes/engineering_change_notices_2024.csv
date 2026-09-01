@@ -1,0 +1,5 @@
+ecn_number,title,release_date,change_category,affected_part_number,replaced_by_part_number,estimated_saving_per_veh
+ECN-2023-0889,Front brake lever forging supplier localization,2023-11-15,VAVE_MATERIAL,53100-KTR-800,53100-KTR-900,1.80
+ECN-2024-0012,Cylinder head core box venting redesign,2024-01-10,PROCESS_OPTIMIZATION,12200-KTR-900,12200-KTR-A00,6.50
+ECN-2024-0045,Unified LED headlamp PCB driver release,2024-02-01,STANDARDIZATION,33100-KCC-800,33100-KCC-900,5.20
+ECN-2024-0098,Brake pedal bushing polymer validation testing,2024-03-12,MATERIAL_SUBSTITUTION,46500-KTR-800,46500-KTR-900,0.90
