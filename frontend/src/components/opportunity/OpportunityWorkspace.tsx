@@ -32,9 +32,11 @@ export const OpportunityWorkspace: React.FC<OpportunityWorkspaceProps> = ({ onOp
 
   const [isSimulating, setIsSimulating] = useState(false);
 
-  const formatCurrency = (val: number): string => {
-    const abs = Math.abs(val);
-    const sign = val < 0 ? '-' : '';
+  const formatCurrency = (val: number | undefined | null): string => {
+    if (val === undefined || val === null || isNaN(Number(val))) return '₹0.00';
+    const num = Number(val);
+    const abs = Math.abs(num);
+    const sign = num < 0 ? '-' : '';
     if (abs >= 10000000) {
       return `${sign}₹${(abs / 10000000).toFixed(2)} Crore`;
     }
@@ -44,11 +46,13 @@ export const OpportunityWorkspace: React.FC<OpportunityWorkspaceProps> = ({ onOp
     return `${sign}₹${abs.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  const formatVolume = (vol: number): string => {
-    if (vol >= 10000000) {
-      return `${(vol / 10000000).toFixed(2)} Crore units`;
+  const formatVolume = (vol: number | undefined | null): string => {
+    if (vol === undefined || vol === null || isNaN(Number(vol))) return '0 units';
+    const num = Number(vol);
+    if (num >= 10000000) {
+      return `${(num / 10000000).toFixed(2)} Crore units`;
     }
-    return `${(vol / 100000).toFixed(1)} Lakh units`;
+    return `${(num / 100000).toFixed(1)} Lakh units`;
   };
 
   const handleSimulate = async () => {
@@ -145,7 +149,7 @@ export const OpportunityWorkspace: React.FC<OpportunityWorkspaceProps> = ({ onOp
         />
         <StatCard
           title="Payback Period"
-          value={simulationResult.payback_period_months !== null ? `${simulationResult.payback_period_months.toFixed(1)} Mos` : 'Immediate'}
+          value={typeof simulationResult.payback_period_months === 'number' && !isNaN(simulationResult.payback_period_months) ? `${simulationResult.payback_period_months.toFixed(1)} Mos` : 'Immediate'}
           subtitle="CAPEX amortization"
           icon={<Clock size={15} />}
         />
@@ -387,7 +391,7 @@ export const OpportunityWorkspace: React.FC<OpportunityWorkspaceProps> = ({ onOp
           <div className="kv-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
             <span className="kv-key" style={{ color: 'var(--text-secondary)' }}>Amortization & Payback Period</span>
             <span className="kv-val" style={{ fontWeight: '700', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
-              {simulationResult.payback_period_months !== null ? `${simulationResult.payback_period_months.toFixed(1)} Months` : 'Immediate'}
+              {typeof simulationResult.payback_period_months === 'number' && !isNaN(simulationResult.payback_period_months) ? `${simulationResult.payback_period_months.toFixed(1)} Months` : 'Immediate'}
             </span>
           </div>
 

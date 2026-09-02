@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 from backend.app.api.v1.endpoints import openai_compat
 from backend.app.api.v1.router import api_router
 from backend.app.core.config import settings
+from backend.app.core.database import init_db
 from backend.app.core.logging import logger, setup_logging
 
 
@@ -22,6 +23,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     setup_logging(log_level="DEBUG" if settings.DEBUG else "INFO")
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION}")
     logger.info(f"Air-Gap Mode: {settings.AIR_GAP_MODE}, Telemetry: {settings.ENABLE_TELEMETRY}")
+    await init_db()
     yield
     logger.info(f"Shutting down {settings.PROJECT_NAME}")
 

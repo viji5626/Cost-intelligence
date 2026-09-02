@@ -1,144 +1,248 @@
 import React, { useEffect, useState } from 'react';
-import { BookOpen } from 'lucide-react';
-import { systemApi } from '../../api/systemApi';
-import { AuditLogEntry } from '../../types';
+import { BookOpen, ShieldCheck, Download, AlertTriangle, Search, RefreshCw } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { fetchAuditLogs, verifyAuditIntegrity, AuditLogItem, IntegrityVerificationResult } from '../../api/auditApi';
 
 interface AuditLogWorkspaceProps {
   onOpenHelp?: (chapterId: string) => void;
 }
 
 export const AuditLogWorkspace: React.FC<AuditLogWorkspaceProps> = ({ onOpenHelp }) => {
-  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+  const { token } = useAuth();
+  const [logs, setLogs] = useState<AuditLogItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [integrity, setIntegrity] = useState<IntegrityVerificationResult | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEvent, setSelectedEvent] = useState<AuditLogItem | null>(null);
 
-  const fetchLogs = async () => {
+  const loadData = async () => {
+    if (!token) return;
+    setLoading(true);
     try {
-      const data = await systemApi.getAuditLogs(50);
-      setLogs(data);
-    } catch {
-      setLogs(getSyntheticAuditLogs());
+      const data = await fetchAuditLogs(token, { search: searchTerm, pageSize: 100 });
+      setLogs(data.events || []);
+
+      const integ = await verifyAuditIntegrity(token);
+      setIntegrity(integ);
+    } catch (err) {
+      console.warn('Failed to load audit logs:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getSyntheticAuditLogs = (): AuditLogEntry[] => [
-    {
-      id: 'aud-001',
-      username: 'cost_eng_1',
-      action: 'HUMAN_OVERRIDE',
-      entity_type: 'IDEA_REVIEW',
-      entity_id: 'idea-syn-01',
-      payload: {
-        previous_decision: 'UNDER_REVIEW',
-        new_decision: 'APPROVED_FOR_IMPLEMENTATION',
-        override_rationale: 'Homologation test report passed by ARAI Pune. Approved for pilot production.',
-      },
-      provenance_hash: 'sha256:4a8b29c91d8e5f32a67bc31e89df90123456789abcdef0123456789abcdef01',
-      created_at: '2024-02-28T14:30:00Z',
-    },
-    {
-      id: 'aud-002',
-      username: 'cost_eng_1',
-      action: 'REQUEST_MORE_EVIDENCE',
-      entity_type: 'IDEA_REVIEW',
-      entity_id: 'idea-syn-04',
-      payload: {
-        comments: 'Conflicting ECN notices detected. Requested NVH test report on polymer bushing.',
-      },
-      provenance_hash: 'sha256:8b9a1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b',
-      created_at: '2024-02-28T11:15:00Z',
-    },
-    {
-      id: 'aud-003',
-      username: 'system_router',
-      action: 'SAFETY_GATE_TRIGGER',
-      entity_type: 'ROUTING_ENGINE',
-      entity_id: 'idea-syn-01',
-      payload: {
-        priority: 'CRITICAL_P0',
-        reason: 'Subsystem BRAKE_SYSTEM flagged as safety critical.',
-      },
-      provenance_hash: 'sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069',
-      created_at: '2024-02-28T09:00:00Z',
-    },
-  ];
-
   useEffect(() => {
-    fetchLogs();
-  }, []);
+    loadData();
+  }, [token, searchTerm]);
+
+  const handleExport = (format: 'csv' | 'xlsx' | 'pdf' | 'html') => {
+    if (!token) return;
+    window.open(`/api/v1/audit/export/${format}?token=${encodeURIComponent(token)}`, '_blank');
+  };
 
   return (
-    <div className="audit-log-workspace animate-fade-in">
+    <div className="audit-log-workspace p-6 max-w-7xl mx-auto space-y-6 animate-fade-in text-slate-100">
       {/* Header */}
-      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+      <div className="flex justify-between items-start flex-wrap gap-4 border-b border-slate-800 pb-4">
         <div>
-          <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--white)', letterSpacing: '-0.3px', margin: 0 }}>
-            Security & Immutable Governance Audit Ledger
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '3px', fontSize: '12px' }}>
-            Permanent, tamper-evident audit records tracking human overrides, reviewer assignments, safety gate triggers, and data ingestion commits.
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-bold text-slate-100">
+              Authoritative Tamper-Evident Audit Ledger
+            </h1>
+            {integrity && (
+              <span
+                className={`flex items-center space-x-1.5 px-2.5 py-0.5 rounded text-xs font-semibold border ${
+                  integrity.is_valid
+                    ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
+                    : 'bg-red-950/80 text-red-300 border-red-700/60'
+                }`}
+              >
+                {integrity.is_valid ? <ShieldCheck size={13} /> : <AlertTriangle size={13} />}
+                <span>SHA-256 HASH CHAIN: {integrity.chain_status}</span>
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-400 mt-1">
+            Layer 1 cryptographic audit trail recording all human overrides, authentication events, AI actions, and dataset commits.
           </p>
         </div>
-        {onOpenHelp && (
+
+        {/* 4 Export Buttons */}
+        <div className="flex items-center space-x-2 flex-wrap">
           <button
-            onClick={() => onOpenHelp('audit-provenance')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '3px 8px',
-              fontSize: '11px',
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-            }}
+            onClick={() => handleExport('csv')}
+            className="flex items-center space-x-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs transition-colors"
           >
-            <BookOpen size={11} color="var(--status-info)" />
-            <span>Manual Ch. 23</span>
+            <Download size={12} />
+            <span>CSV</span>
           </button>
-        )}
+          <button
+            onClick={() => handleExport('xlsx')}
+            className="flex items-center space-x-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs transition-colors"
+          >
+            <Download size={12} />
+            <span>Excel (.xlsx)</span>
+          </button>
+          <button
+            onClick={() => handleExport('pdf')}
+            className="flex items-center space-x-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs transition-colors"
+          >
+            <Download size={12} />
+            <span>PDF</span>
+          </button>
+          <button
+            onClick={() => handleExport('html')}
+            className="flex items-center space-x-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg text-xs shadow transition-colors"
+          >
+            <Download size={12} />
+            <span>Offline HTML</span>
+          </button>
+          {onOpenHelp && (
+            <button
+              onClick={() => onOpenHelp('audit-provenance')}
+              className="flex items-center space-x-1 px-2.5 py-1.5 bg-slate-900 border border-slate-800 text-slate-400 rounded-lg text-xs hover:text-slate-200"
+            >
+              <BookOpen size={12} />
+              <span>Ch. 23</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
+      {/* Search Bar */}
+      <div className="flex items-center space-x-3">
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-3 top-3 text-slate-500" />
+          <input
+            type="text"
+            placeholder="Search by action, user, entity ID, or hash..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-100 focus:outline-none focus:border-red-500"
+          />
+        </div>
+        <button
+          onClick={loadData}
+          className="p-2 bg-slate-900 border border-slate-800 rounded-lg hover:bg-slate-800 text-slate-400"
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
+      {/* Audit Table */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden shadow">
+        <table className="w-full text-left text-xs text-slate-300">
+          <thead className="bg-slate-950 text-slate-400 uppercase font-semibold text-[11px] border-b border-slate-800">
             <tr>
-              <th style={{ width: '150px' }}>Timestamp</th>
-              <th style={{ width: '130px' }}>Actor User</th>
-              <th style={{ width: '170px' }}>Action Type</th>
-              <th style={{ width: '180px' }}>Entity Type / ID</th>
-              <th>Audit Details & Rationale</th>
-              <th style={{ width: '190px' }}>Provenance Hash</th>
+              <th className="px-4 py-3">Seq</th>
+              <th className="px-4 py-3">Timestamp (UTC)</th>
+              <th className="px-4 py-3">User & Role</th>
+              <th className="px-4 py-3">Action</th>
+              <th className="px-4 py-3">Entity Target</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">SHA-256 Hash</th>
             </tr>
           </thead>
-          <tbody>
-            {logs.map((log) => (
-              <tr key={log.id}>
-                <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                  {new Date(log.created_at).toLocaleString()}
-                </td>
-                <td style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
-                  {log.username || 'System Engine'}
-                </td>
-                <td>
-                  <span className={`badge ${log.action.includes('OVERRIDE') ? 'badge-hero' : log.action.includes('SAFETY') ? 'badge-warning' : 'badge-info'}`}>
-                    {log.action}
-                  </span>
-                </td>
-                <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-blue)' }}>
-                  {log.entity_type} ({log.entity_id})
-                </td>
-                <td style={{ maxWidth: '350px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  {log.payload?.override_rationale || log.payload?.comments || log.payload?.reason || JSON.stringify(log.payload)}
-                </td>
-                <td style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--accent-emerald)', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {log.provenance_hash || 'sha256:verified-audit'}
-                </td>
+          <tbody className="divide-y divide-slate-800/60">
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading audit trail...</td>
               </tr>
-            ))}
+            ) : logs.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-slate-500">No audit events found.</td>
+              </tr>
+            ) : (
+              logs.map((ev) => (
+                <tr
+                  key={ev.id}
+                  onClick={() => setSelectedEvent(ev)}
+                  className="hover:bg-slate-800/50 cursor-pointer transition-colors"
+                >
+                  <td className="px-4 py-3 font-mono text-[11px] text-slate-400">{ev.sequence_number || '—'}</td>
+                  <td className="px-4 py-3 text-slate-400">
+                    {ev.timestamp ? ev.timestamp.replace('T', ' ').substring(0, 19) : ''}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="font-semibold text-slate-100">{ev.username}</span>
+                    <span className="ml-1.5 px-1.5 py-0.2 rounded bg-slate-800 text-[10px] text-slate-400">
+                      {ev.role}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 font-medium text-amber-400">{ev.action}</td>
+                  <td className="px-4 py-3 text-slate-300">
+                    {ev.entity_type} {ev.entity_id ? `(${ev.entity_id})` : ''}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 text-[10px]">
+                      {ev.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-[11px] text-sky-400">
+                    {ev.event_hash ? ev.event_hash.substring(0, 16) + '...' : '—'}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Event Details Modal */}
+      {selectedEvent && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <div
+            className="w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-xl p-6 shadow-2xl text-slate-100 max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-start border-b border-slate-800 pb-3 mb-4">
+              <div>
+                <h3 className="text-base font-bold text-red-400">
+                  Event #{selectedEvent.sequence_number}: {selectedEvent.action}
+                </h3>
+                <div className="text-xs text-slate-400 mt-0.5">
+                  {selectedEvent.timestamp} • {selectedEvent.username} ({selectedEvent.role})
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="text-slate-400 hover:text-slate-200 text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-2 bg-slate-950 p-3 rounded border border-slate-800">
+                <div><b>Entity:</b> {selectedEvent.entity_type} ({selectedEvent.entity_id || 'N/A'})</div>
+                <div><b>Status:</b> {selectedEvent.status}</div>
+                <div><b>Department:</b> {selectedEvent.department || 'N/A'}</div>
+                <div><b>Plant Scope:</b> {selectedEvent.scope || 'N/A'}</div>
+                <div><b>Client IP:</b> {selectedEvent.client_ip || 'N/A'}</div>
+                <div><b>Session ID:</b> {selectedEvent.session_id || 'N/A'}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-300 mb-1">Cryptographic Provenance</div>
+                <div className="bg-slate-950 p-2.5 rounded border border-slate-800 font-mono text-[11px] space-y-1">
+                  <div className="text-slate-400">Prev Hash: <span className="text-slate-200">{selectedEvent.previous_event_hash}</span></div>
+                  <div className="text-slate-400">Event Hash: <span className="text-sky-300">{selectedEvent.event_hash}</span></div>
+                </div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-300 mb-1">Payload JSON</div>
+                <pre className="bg-slate-950 p-3 rounded border border-slate-800 text-emerald-300 font-mono text-[11px] overflow-x-auto max-h-48">
+                  {JSON.stringify(selectedEvent.payload, null, 2)}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

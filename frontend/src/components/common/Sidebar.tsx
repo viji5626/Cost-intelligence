@@ -12,6 +12,7 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Compass,
   LucideIcon,
 } from 'lucide-react';
 
@@ -57,6 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       groupName: 'OVERVIEW',
       items: [
         { id: 'overview', label: 'Executive Dashboard', icon: LayoutDashboard },
+        { id: 'executive_copilot', label: 'Executive Assistant', icon: Compass },
       ],
     },
     {
@@ -88,6 +90,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       groupName: 'SYSTEM',
       items: [
+        { id: 'users', label: 'User & Access Mgmt', icon: Terminal },
+        { id: 'activity', label: 'User Activity & Flow', icon: Compass },
         { id: 'aistudio', label: 'AI Studio Workspace', icon: Terminal },
         { id: 'hardware', label: 'Hardware & AI Runtime', icon: Cpu },
         { id: 'audit', label: 'Security & Audit Log', icon: ScrollText },
@@ -117,28 +121,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
         position: 'relative',
       }}
     >
-      {/* Collapse / Expand Toggle Button */}
+      {/* Brand Header & Toggle */}
       <div
         style={{
           display: 'flex',
-          justifyContent: isCollapsed ? 'center' : 'space-between',
           alignItems: 'center',
-          marginBottom: '10px',
+          justifyContent: isCollapsed ? 'center' : 'space-between',
+          marginBottom: '12px',
           padding: '0 4px',
+          paddingBottom: '10px',
+          borderBottom: '1px solid var(--border-subtle)',
         }}
       >
-        {!isCollapsed && (
-          <span
+        {!isCollapsed ? (
+          <div
             style={{
-              fontSize: '10px',
-              fontWeight: '700',
-              color: 'var(--text-muted)',
-              letterSpacing: '0.6px',
+              backgroundColor: '#FFFFFF',
+              padding: '3px 8px',
+              borderRadius: 'var(--radius-sm)',
+              boxShadow: '0 1px 4px rgba(0, 0, 0, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
             }}
           >
-            NAVIGATION
-          </span>
-        )}
+            <img
+              src="/assets/hero_cim_logo.png"
+              alt="Hero Cost Intelligence Model"
+              style={{
+                height: '24px',
+                width: 'auto',
+                objectFit: 'contain',
+              }}
+            />
+          </div>
+        ) : null}
         <button
           onClick={toggleCollapse}
           title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
@@ -158,6 +174,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {isCollapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
         </button>
       </div>
+
+      {/* Navigation Label */}
+      {!isCollapsed && (
+        <div style={{ padding: '0 4px', marginBottom: '8px' }}>
+          <span
+            style={{
+              fontSize: '10px',
+              fontWeight: '700',
+              color: 'var(--text-muted)',
+              letterSpacing: '0.6px',
+            }}
+          >
+            NAVIGATION
+          </span>
+        </div>
+      )}
 
       {/* Navigation Groups */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
@@ -246,50 +278,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         ))}
       </nav>
-
-      {/* Bottom System Status */}
-      {!isCollapsed ? (
-        <div
-          style={{
-            marginTop: 'auto',
-            padding: '8px 10px',
-            backgroundColor: 'var(--bg-card)',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border-subtle)',
-          }}
-        >
-          <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-            System Baseline
-          </div>
-          <div
-            style={{
-              fontSize: '10px',
-              fontWeight: '600',
-              color: 'var(--text-primary)',
-              marginTop: '2px',
-              fontFamily: 'var(--font-mono)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-            }}
-          >
-            <span style={{ display: 'inline-block', width: '5px', height: '5px', borderRadius: '50%', backgroundColor: 'var(--status-healthy)' }} />
-            <span>v3.1.1-AIRGAP</span>
-          </div>
-        </div>
-      ) : (
-        <div
-          title="v3.1.1-AIRGAP Online"
-          style={{
-            marginTop: 'auto',
-            display: 'flex',
-            justifyContent: 'center',
-            padding: '6px 0',
-          }}
-        >
-          <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--status-healthy)' }} />
-        </div>
-      )}
     </aside>
   );
 };

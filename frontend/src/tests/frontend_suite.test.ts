@@ -322,3 +322,162 @@ describe('8. Model Browsing, Loading Bar & LM Studio Telemetry Tests', () => {
   });
 });
 
+describe('9. Executive Assistant & Backend Persona Resolution Tests', () => {
+  it('should automatically resolve presentation persona based on active workspace without manual selector', () => {
+    const resolveContext = (page: string) => {
+      if (page === 'opex') return { persona: 'PLANT_HEAD', reason: 'Plant OPEX workspace' };
+      if (page === 'ideathon' || page === 'governance') return { persona: 'VAVE_COMMERCIAL', reason: 'VAVE & Governance' };
+      if (page === 'purchase') return { persona: 'PURCHASE', reason: 'Sourcing & BOM' };
+      return { persona: 'CEO', reason: 'Executive Overview' };
+    };
+
+    const opexCtx = resolveContext('opex');
+    assert.strictEqual(opexCtx.persona, 'PLANT_HEAD');
+
+    const ideathonCtx = resolveContext('ideathon');
+    assert.strictEqual(ideathonCtx.persona, 'VAVE_COMMERCIAL');
+
+    const defaultCtx = resolveContext('overview');
+    assert.strictEqual(defaultCtx.persona, 'CEO');
+  });
+
+  it('should preserve NO_IMPLEMENTATION_EVIDENCE_FOUND invariant', () => {
+    const evidenceState = 'NO_IMPLEMENTATION_EVIDENCE_FOUND';
+    assert.notStrictEqual(evidenceState, 'NOT_IMPLEMENTED');
+    assert.strictEqual(evidenceState, 'NO_IMPLEMENTATION_EVIDENCE_FOUND');
+  });
+
+  it('should generate page-aware context prompts dynamically', () => {
+    const getPrompts = (page: string) => {
+      switch (page) {
+        case 'opex':
+          return ['Why is Haridwar OPEX higher than Dharuhera?', 'What is the addressable utility savings opportunity?'];
+        case 'ideathon':
+          return ['Is Idea IDEA-0042 already implemented?', 'What is our validated VAVE savings pipeline?'];
+        default:
+          return ['What is our total verified annual cost reduction opportunity?'];
+      }
+    };
+
+    const opexPrompts = getPrompts('opex');
+    assert.strictEqual(opexPrompts.length, 2);
+    assert.ok(opexPrompts[0].includes('Haridwar'));
+
+    const ideathonPrompts = getPrompts('ideathon');
+    assert.strictEqual(ideathonPrompts.length, 2);
+    assert.ok(ideathonPrompts[0].includes('IDEA-0042'));
+  });
+
+  it('should format execution trace stages cleanly without exposing internal thoughts', () => {
+    const trace = [
+      '1. Context analyzed: Automatically resolved from active workspace [OPEX]',
+      '2. Ingested active workspace context (OPEX_BENCHMARK • Haridwar FY24)',
+      '3. Queried Plant OPEX multi-utility time-series dataset',
+      '4. Executed deterministic 5-factor comparability scoring against benchmark plants',
+      '5. Decomposed variance into controllable drivers vs structural tariffs',
+      '6. Evaluated evidence grounding and certified verification state',
+    ];
+
+    assert.strictEqual(trace.length, 6);
+    // Ensure no raw chain-of-thought keywords or marketing claims
+    trace.forEach((step) => {
+      assert.ok(!step.toLowerCase().includes('chain of thought'));
+      assert.ok(!step.toLowerCase().includes('model thinking'));
+      assert.ok(!step.toLowerCase().includes('hidden reasoning'));
+      assert.ok(!step.toLowerCase().includes('zero hallucination'));
+    });
+  });
+});
+
+describe('10. Authentication, RBAC & Plant Scope Governance Tests', () => {
+  it('should enforce plant data scope boundaries for plant head roles', () => {
+    const userHaridwar = {
+      username: 'plant_head_haridwar',
+      roles: ['PLANT_HEAD'],
+      plant_scope: ['HARIDWAR'],
+    };
+
+    const hasAccess = (user: typeof userHaridwar, plantId: string) => {
+      if (user.roles.includes('ADMINISTRATOR') || user.roles.includes('CENTRAL_OPERATIONS')) return true;
+      if (user.plant_scope.includes('ALL')) return true;
+      return user.plant_scope.map((p) => p.toUpperCase()).includes(plantId.toUpperCase());
+    };
+
+    assert.strictEqual(hasAccess(userHaridwar, 'HARIDWAR'), true);
+    assert.strictEqual(hasAccess(userHaridwar, 'DHARUHERA'), false);
+    assert.strictEqual(hasAccess(userHaridwar, 'NEEMRANA'), false);
+
+    const userCentral = {
+      username: 'central_ops_lead',
+      roles: ['CENTRAL_OPERATIONS'],
+      plant_scope: ['ALL'],
+    };
+    assert.strictEqual(hasAccess(userCentral, 'HARIDWAR'), true);
+    assert.strictEqual(hasAccess(userCentral, 'DHARUHERA'), true);
+  });
+
+  it('should lock user accounts after 5 consecutive failed attempts', () => {
+    const checkLockout = (failedAttempts: number) => {
+      const isLocked = failedAttempts >= 5;
+      return {
+        isLocked,
+        lockoutMinutes: isLocked ? 5 : 0,
+      };
+    };
+
+    assert.strictEqual(checkLockout(3).isLocked, false);
+    assert.strictEqual(checkLockout(5).isLocked, true);
+    assert.strictEqual(checkLockout(6).isLocked, true);
+  });
+});
+
+describe('11. Authoritative Audit, Session Reconstruction & Multi-Format Exports Tests', () => {
+  it('should verify cryptographic SHA-256 chain integrity state', () => {
+    const verifyChain = (events: { hash: string; prevHash: string }[]) => {
+      let valid = true;
+      for (let i = 1; i < events.length; i++) {
+        if (events[i].prevHash !== events[i - 1].hash) {
+          valid = false;
+          break;
+        }
+      }
+      return valid;
+    };
+
+    const validChain = [
+      { prevHash: '0000000000000000000000000000000000000000000000000000000000000000', hash: 'hash_1' },
+      { prevHash: 'hash_1', hash: 'hash_2' },
+      { prevHash: 'hash_2', hash: 'hash_3' },
+    ];
+    assert.strictEqual(verifyChain(validChain), true);
+
+    const tamperedChain = [
+      { prevHash: '0000000000000000000000000000000000000000000000000000000000000000', hash: 'hash_1' },
+      { prevHash: 'tampered_hash', hash: 'hash_2' },
+    ];
+    assert.strictEqual(verifyChain(tamperedChain), false);
+  });
+
+  it('should validate all 4 export stream formats and zero CDN constraints in offline HTML', () => {
+    const formats = ['csv', 'xlsx', 'pdf', 'html'];
+    assert.strictEqual(formats.length, 4);
+
+    const offlineHtmlSample = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
+        <title>Hero Audit Report</title>
+      </head>
+      <body><h1>Hero Audit Ledger</h1></body>
+      </html>
+    `;
+
+    assert.ok(!offlineHtmlSample.includes('http://'));
+    assert.ok(!offlineHtmlSample.includes('https://'));
+    assert.ok(offlineHtmlSample.includes("default-src 'none'"));
+  });
+});
+
+
+

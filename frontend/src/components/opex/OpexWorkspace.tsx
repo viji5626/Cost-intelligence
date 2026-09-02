@@ -404,7 +404,7 @@ export const OpexWorkspace: React.FC<OpexWorkspaceProps> = ({ onOpenHelp }) => {
                   {kpis.electricity?.cost_per_kwh_inr ? `₹${kpis.electricity.cost_per_kwh_inr.toFixed(2)} / kWh` : 'N/A'}
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                  Unit Power: ₹{kpis.electricity?.cost_per_vehicle_inr.toFixed(2)} / veh
+                  Unit Power: ₹{kpis.electricity?.cost_per_vehicle_inr !== undefined && kpis.electricity?.cost_per_vehicle_inr !== null ? Number(kpis.electricity.cost_per_vehicle_inr).toFixed(2) : 'N/A'} / veh
                 </div>
               </div>
             </div>
@@ -451,7 +451,7 @@ export const OpexWorkspace: React.FC<OpexWorkspaceProps> = ({ onOpenHelp }) => {
               <div style={{ padding: '8px 10px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                 <div className="kv-key" style={{ fontSize: '10px', textTransform: 'uppercase' }}>Specific Water KPI</div>
                 <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--white)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
-                  {kpis.kl_per_vehicle.toFixed(2)} KL / veh
+                  {kpis.kl_per_vehicle !== undefined && kpis.kl_per_vehicle !== null ? Number(kpis.kl_per_vehicle).toFixed(2) : 'N/A'} KL / veh
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                   Total: {kpis.water?.total_water_kl ? `${(kpis.water.total_water_kl / 1000).toFixed(0)}k KL` : 'N/A'}
@@ -461,10 +461,10 @@ export const OpexWorkspace: React.FC<OpexWorkspaceProps> = ({ onOpenHelp }) => {
               <div style={{ padding: '8px 10px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                 <div className="kv-key" style={{ fontSize: '10px', textTransform: 'uppercase' }}>Unit Water Cost</div>
                 <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--white)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
-                  ₹{kpis.water?.cost_per_vehicle_inr.toFixed(2)} / veh
+                  ₹{kpis.water?.cost_per_vehicle_inr !== undefined && kpis.water?.cost_per_vehicle_inr !== null ? Number(kpis.water.cost_per_vehicle_inr).toFixed(2) : 'N/A'} / veh
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                  Blended Rate: {kpis.water?.cost_per_kl_inr ? `₹${kpis.water.cost_per_kl_inr.toFixed(2)}/KL` : 'N/A'}
+                  Blended Rate: {kpis.water?.cost_per_kl_inr ? `₹${Number(kpis.water.cost_per_kl_inr).toFixed(2)}/KL` : 'N/A'}
                 </div>
               </div>
             </div>
@@ -587,17 +587,17 @@ export const OpexWorkspace: React.FC<OpexWorkspaceProps> = ({ onOpenHelp }) => {
               <div style={{ padding: '8px 10px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                 <div className="kv-key" style={{ fontSize: '10px', textTransform: 'uppercase' }}>Unit Fuel Cost</div>
                 <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--white)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
-                  ₹{kpis.gas_fuel?.gas_cost_per_vehicle_inr.toFixed(2)} / veh
+                  ₹{kpis.gas_fuel?.gas_cost_per_vehicle_inr !== undefined && kpis.gas_fuel?.gas_cost_per_vehicle_inr !== null ? Number(kpis.gas_fuel.gas_cost_per_vehicle_inr).toFixed(2) : 'N/A'} / veh
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                  Total: ₹{kpis.gas_fuel?.gas_cost_inr ? `${(kpis.gas_fuel.gas_cost_inr / 10000000).toFixed(1)} Cr` : 'N/A'}
+                  Total: ₹{kpis.gas_fuel?.gas_cost_inr ? `${(Number(kpis.gas_fuel.gas_cost_inr) / 10000000).toFixed(1)} Cr` : 'N/A'}
                 </div>
               </div>
 
               <div style={{ padding: '8px 10px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                 <div className="kv-key" style={{ fontSize: '10px', textTransform: 'uppercase' }}>Volumetric Tariff</div>
                 <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--white)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
-                  {kpis.gas_fuel?.gas_cost_per_cf_inr ? `₹${kpis.gas_fuel.gas_cost_per_cf_inr.toFixed(2)} / CF` : 'Direct Gas Bill'}
+                  {kpis.gas_fuel?.gas_cost_per_cf_inr ? `₹${Number(kpis.gas_fuel.gas_cost_per_cf_inr).toFixed(2)} / CF` : 'Direct Gas Bill'}
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Fuel Price Basis</div>
               </div>

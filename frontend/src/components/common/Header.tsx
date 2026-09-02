@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, User, Sun, Moon, HelpCircle } from 'lucide-react';
-import { HardwareStatusBadge } from './HardwareStatusBadge';
+import { User, Sun, Moon, LogOut } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 interface HeaderProps {
   activeTab?: string;
-  onOpenHelp?: (chapterId?: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ activeTab = 'overview', onOpenHelp }) => {
+export const Header: React.FC<HeaderProps> = ({ activeTab = 'overview' }) => {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const { currentUser, logout } = useAuth();
 
   useEffect(() => {
     const savedTheme = (localStorage.getItem('hero-theme') as 'dark' | 'light') || 'dark';
@@ -27,6 +27,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab = 'overview', onOpenHe
     switch (tab) {
       case 'overview':
         return 'Executive Overview';
+      case 'executive_copilot':
+        return 'Executive Assistant';
       case 'opex':
         return 'Plant OPEX & Benchmark';
       case 'opportunity':
@@ -39,6 +41,10 @@ export const Header: React.FC<HeaderProps> = ({ activeTab = 'overview', onOpenHe
         return 'Human Review & Safety';
       case 'ingestion':
         return 'Data Ingestion Studio';
+      case 'users':
+        return 'User & Access Management';
+      case 'activity':
+        return 'User Activity & Session Reconstruction';
       case 'aistudio':
         return 'AI Studio Control Center';
       case 'hardware':
@@ -52,33 +58,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab = 'overview', onOpenHe
     }
   };
 
-  const getChapterMapping = (tab: string) => {
-    switch (tab) {
-      case 'overview':
-        return 'executive-dashboard';
-      case 'opex':
-        return 'plant-opex';
-      case 'opportunity':
-        return 'opportunity-valuation';
-      case 'ideathon':
-        return 'ideathon-search';
-      case 'idea-detail':
-        return 'evidence-grounding';
-      case 'governance':
-        return 'human-review-queue';
-      case 'ingestion':
-        return 'data-ingestion';
-      case 'aistudio':
-        return 'ai-studio-overview';
-      case 'hardware':
-        return 'hardware-profiles';
-      case 'audit':
-        return 'audit-provenance';
-      default:
-        return 'getting-started';
-    }
-  };
-
   return (
     <header
       style={{
@@ -88,27 +67,35 @@ export const Header: React.FC<HeaderProps> = ({ activeTab = 'overview', onOpenHe
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 16px',
+        padding: '0 20px',
         position: 'sticky',
         top: 0,
         zIndex: 50,
       }}
     >
       {/* Left: Brand + Active Workspace Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div
           style={{
-            backgroundColor: 'var(--hero-red)',
-            color: '#FFFFFF',
-            padding: '2px 7px',
+            display: 'flex',
+            alignItems: 'center',
+            backgroundColor: '#FFFFFF',
+            padding: '2px 6px',
             borderRadius: 'var(--radius-sm)',
-            fontWeight: '900',
-            fontSize: '11px',
-            letterSpacing: '0.8px',
-            lineHeight: 1.1,
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.25)',
           }}
         >
-          HERO
+          <img
+            src="/assets/hero_cim_logo.png"
+            alt="Hero Cost Intelligence Model"
+            style={{
+              height: '22px',
+              width: 'auto',
+              display: 'block',
+              objectFit: 'contain',
+            }}
+          />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Workstation /</span>
@@ -118,36 +105,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab = 'overview', onOpenHe
         </div>
       </div>
 
-      {/* Center: Hardware Telemetry Indicator */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <HardwareStatusBadge />
-      </div>
-
-      {/* Right: Help Trigger + Airgap Badge + Theme Toggle + User Session */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {/* Contextual Help Trigger */}
-        {onOpenHelp && (
-          <button
-            onClick={() => onOpenHelp(getChapterMapping(activeTab))}
-            title="Open Interactive Engineering Manual for this workspace"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '3px 8px',
-              fontSize: '11px',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-            }}
-          >
-            <HelpCircle size={12} color="var(--status-info)" />
-            <span>Help</span>
-          </button>
-        )}
-
+      {/* Right: Clean Theme Toggle + User Session */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         {/* Theme Switcher */}
         <button
           onClick={toggleTheme}
@@ -155,47 +114,40 @@ export const Header: React.FC<HeaderProps> = ({ activeTab = 'overview', onOpenHe
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
-            padding: '3px 8px',
-            fontSize: '10px',
+            gap: '5px',
+            padding: '4px 10px',
+            fontSize: '11px',
             fontFamily: 'var(--font-mono)',
+            fontWeight: '600',
             backgroundColor: 'var(--bg-tertiary)',
             border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-sm)',
             color: 'var(--text-secondary)',
             cursor: 'pointer',
+            transition: 'all var(--transition-fast)',
           }}
         >
-          {theme === 'dark' ? <Sun size={11} color="var(--status-warning)" /> : <Moon size={11} color="var(--status-info)" />}
+          {theme === 'dark' ? <Sun size={12} color="var(--status-warning)" /> : <Moon size={12} color="var(--status-info)" />}
           <span>{theme === 'dark' ? 'LIGHT' : 'DARK'}</span>
         </button>
 
-        {/* Air-Gap Status Badge */}
+        {/* User Session Profile */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
-            fontSize: '10px',
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--status-healthy)',
-            backgroundColor: 'rgba(16, 185, 129, 0.08)',
-            padding: '2px 7px',
+            gap: '8px',
+            padding: '3px 10px',
+            backgroundColor: 'var(--bg-tertiary)',
+            border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-sm)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
           }}
         >
-          <ShieldCheck size={11} />
-          <span>Air-Gap Active</span>
-        </div>
-
-        {/* User Session Profile */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <div
             style={{
-              width: '24px',
-              height: '24px',
-              borderRadius: 'var(--radius-sm)',
+              width: '22px',
+              height: '22px',
+              borderRadius: '50%',
               backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-subtle)',
               display: 'flex',
@@ -206,13 +158,31 @@ export const Header: React.FC<HeaderProps> = ({ activeTab = 'overview', onOpenHe
             <User size={12} color="var(--text-secondary)" />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-primary)', lineHeight: 1.1 }}>
-              Cost Engineer
+            <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-primary)', lineHeight: 1.1 }}>
+              {currentUser?.display_name || 'Chief Administrator'}
             </span>
             <span style={{ fontSize: '9px', color: 'var(--text-muted)', lineHeight: 1.1 }}>
-              VAVE / Ops
+              {currentUser?.roles?.[0] || 'ADMINISTRATOR'} • {currentUser?.plant_scope?.join(', ') || 'ALL'}
             </span>
           </div>
+          {currentUser && (
+            <button
+              onClick={() => logout()}
+              title="Sign Out"
+              style={{
+                marginLeft: '6px',
+                padding: '3px 5px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <LogOut size={12} />
+            </button>
+          )}
         </div>
       </div>
     </header>

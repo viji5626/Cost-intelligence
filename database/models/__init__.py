@@ -4,7 +4,11 @@ Database Models Package Registry
 
 from database.models.base import BaseModel
 from database.models.auth import User
+from database.models.session import UserSession
+from database.models.security_policy import SecurityPolicy
 from database.models.audit import AuditLog
+from database.models.activity import UserActivityEvent
+from database.models.runtime_config import SystemRuntimeConfig
 from database.models.vehicle_hierarchy import (
     ProductFamily,
     Vehicle,
@@ -57,7 +61,11 @@ from database.models.embeddings import RecordEmbedding
 __all__ = [
     "BaseModel",
     "User",
+    "UserSession",
+    "SecurityPolicy",
     "AuditLog",
+    "UserActivityEvent",
+    "SystemRuntimeConfig",
     "ProductFamily",
     "Vehicle",
     "VehicleModel",
